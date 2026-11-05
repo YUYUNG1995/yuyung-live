@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head><title>YUYUNG LIVE</title>
+<style>
+body{font-family:Arial;text-align:center;background:#111;color:white;margin:0;padding:10px}
+h1{color:#ff3b30} video{width:45%;border-radius:15px;background:black;margin:5px;border:2px solid #333}
+#chat{width:90%;max-width:600px;height:120px;background:#222;margin:10px auto;padding:10px;overflow-y:auto;text-align:left;border-radius:10px}
+input{padding:12px;width:60%;border-radius:20px;border:none}
+button{padding:12px 25px;font-size:16px;border:none;border-radius:20px;cursor:pointer;margin:5px}
+.start{background:#00c853;color:white}.next{background:#ff3b30;color:white}
+</style>
+</head>
+<body>
+<h1>YUYUNG LIVE 🔴</h1>
+<p id="status">Click START para maghanap ng kausap</p>
+<video id="myVideo" autoplay muted playsinline></video>
+<video id="partnerVideo" autoplay playsinline></video><br>
+<button class="start" onclick="start()">START</button>
+<button class="next" onclick="next()">NEXT ➡️</button>
+<div id="chat"></div>
+<input id="msgInput" placeholder="Type message...">
+<button onclick="sendChat()">Send</button>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket=io();let pc,localStream;
+async function start(){
+ localStream=await navigator.mediaDevices.getUserMedia({video:true,audio:true});
+ document.getElementById('myVideo').srcObject=localStream;
+ socket.emit('find-partner');
+ document.getElementById('status').innerText="Naghahanap ng kausap...";
+}
+function next(){
+ if(pc)pc.close();
+ document.getElementById('partnerVideo').srcObject=null;
+ document.getElementById('chat').innerHTML='';
+ socket.emit('next'); socket.emit('find-partner');
+}
+function sendChat(){
+ let m=document.getElementById('msgInput').value;
+ if(!m)return;
+ document.getElementById('chat').innerHTML+="<div><b>Ikaw:</b> "+m+"</div>";
+ socket.emit('chat',m);
+ document.getElementById('msgInput').value='';
+}
+socket.on('chat',m=>{document.getElementById('chat').innerHTML+="<div><b>Stranger:</b> "+m+"</div>";});
+socket.on('partner-found',async(data)=>{
+ document.getElementById('status').innerText="Connected! Say Hi!";
+ pc=new RTCPeerConnection();
+ localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
+ pc.ontrack=e=>document.getElementById('partnerVideo').srcObject=e.streams[0];
+ pc.onicecandidate=e=>{if(e.candidate)socket.emit('signal',{candidate:e.candidate});};
+ if(data.initiator){let offer=await pc.createOffer();await pc.setLocalDescription(offer);socket.emit('signal',{offer});}
+});
+socket.on('signal',async(data)=>{
+ if(data.offer){await pc.setRemoteDescription(data.offer);let ans=await pc.createAnswer();await pc.setLocalDescription(ans);socket.emit('signal',{answer:ans});}
+ if(data.answer){await pc.setRemoteDescription(data.answer);}
+ if(data.candidate){await pc.addIceCandidate(data.candidate);}
+});
+socket.on('partner-left',()=>{document.getElementById('status').innerText="Umalis yung kausap mo. Click NEXT.";});
+socket.on('waiting',()=>{document.getElementById('status').innerText="Waiting... ikaw muna maghintay";});
+</script>
+</body>
+</html>
