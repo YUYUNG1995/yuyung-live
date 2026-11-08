@@ -1,28 +1,32 @@
+
+Racel Miranda <racelmiranda1995@gmail.com>
+1:46 PM (3 minutes ago)
+to me
+
 <!DOCTYPE html>
-<html lang="tl">
+<html lang="en">
 <head>
-<title>YUYUNG LIVE | Live Video Chat sa Stranger - Philippines</title>
+<title>YUYUNG LIVE | Live Video Chat with Strangers - Philippines</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- PANG-GOOGLE NA, DITO MAG-SIMULA -->
-<meta name="description" content="YUYUNG LIVE - Makipag-live video chat sa mga stranger sa Pilipinas. Click START para makahanap ng kausap, NEXT para lumipat. Libre, mabilis, walang sign-up!">
-<meta name="keywords" content="YUYUNG LIVE, yuyung live, video chat, live chat, stranger chat, omegle philippines, chat random, pinoy video chat">
+<!-- SEO FOR GOOGLE -->
+<meta name="description" content="YUYUNG LIVE - Live video chat with strangers in the Philippines. Click START to find someone to talk to, NEXT to switch. Free, fast, no sign-up!">
+<meta name="keywords" content="YUYUNG LIVE, yuyung live, video chat, live chat, stranger chat, omegle philippines, random chat, pinoy video chat">
 <meta name="author" content="YUYUNG LIVE">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://yuyung-live.onrender.com/">
 
-<!-- Para pag ni-share sa Facebook / Messenger, may preview -->
+<!-- For Facebook / Messenger preview -->
 <meta property="og:type" content="website">
 <meta property="og:title" content="YUYUNG LIVE - Live Video Chat">
-<meta property="og:description" content="Click START para makipag-video chat sa stranger ngayon! Libre at walang sign-up.">
+<meta property="og:description" content="Click START to video chat with a stranger now! Free and no sign-up.">
 <meta property="og:url" content="https://yuyung-live.onrender.com/">
 <meta property="og:site_name" content="YUYUNG LIVE">
 
-<!-- Para pag ni-share sa Google / Twitter -->
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="YUYUNG LIVE - Live Video Chat">
-<meta name="twitter:description" content="Makipag-video chat sa stranger. Click START na!">
+<meta name="twitter:description" content="Video chat with strangers. Click START now!">
 
 <style>
   body{font-family:Arial;text-align:center;background:#111;color:white;margin:0;padding:10px}
@@ -41,8 +45,8 @@
 </head>
 <body>
 <h1>YUYUNG LIVE🔴</h1>
-<p>Live Video Chat sa Stranger - Pinoy Random Chat</p>
-<p id="status">Click START para maghanap ng kausap</p>
+<p>Live Video Chat with Strangers - Filipino Random Chat</p>
+<p id="status">Click START to find someone to talk to</p>
 
 <div class="video-grid">
   <div class="video-box"><video id="myVideo" autoplay muted playsinline></video></div>
@@ -57,10 +61,10 @@
 <input id="msgInput" placeholder="Type message...">
 <button onclick="sendChat()">Send</button>
 
-<!-- PANG-GOOGLE DIN TO, WAG TANGGALIN -->
+<!-- SEO TEXT - DO NOT REMOVE -->
 <div class="seo-text">
-  <h2>YUYUNG LIVE - Pinoy Video Chat</h2>
-  <p>Welcome sa YUYUNG LIVE! Ang libreng live video chat para sa mga Pilipino. Makipag-usap sa mga bagong kaibigan, makipagkwentuhan, at makakilala ng stranger sa buong Pilipinas. Pindutin lang ang START para magsimula, at NEXT para lumipat sa ibang kausap. Walang kailangan i-download at walang sign-up.</p>
+  <h2>YUYUNG LIVE - Filipino Video Chat</h2>
+  <p>Welcome to YUYUNG LIVE! The free live video chat for Filipinos. Talk to new friends, have fun conversations, and meet strangers all over the Philippines. Just press START to begin, and NEXT to move to another person. No download needed and no sign-up required.</p>
 </div>
 
 <script src="/socket.io/socket.io.js"></script>
@@ -77,7 +81,7 @@ async function toggleStart(){
     localStream = await navigator.mediaDevices.getUserMedia({video:true,audio:true});
     document.getElementById('myVideo').srcObject = localStream;
     socket.emit('find-partner');
-    document.getElementById('status').innerText = "Naghahanap ng kausap...";
+    document.getElementById('status').innerText = "Looking for someone to talk to...";
   } else {
     isStarted = false;
     btn.innerText = "START";
@@ -86,7 +90,7 @@ async function toggleStart(){
     if(pc) pc.close();
     document.getElementById('partnerVideo').srcObject = null;
     socket.emit('next');
-    document.getElementById('status').innerText = "Click START para maghanap ng kausap";
+    document.getElementById('status').innerText = "Click START to find someone to talk to";
   }
 }
 function next(){
@@ -95,12 +99,12 @@ function next(){
   document.getElementById('chat').innerHTML = '';
   if(isStarted){ socket.emit('next'); socket.emit('find-partner'); }
   else { toggleStart(); return; }
-  document.getElementById('status').innerText = "Naghahanap ng bagong kausap...";
+  document.getElementById('status').innerText = "Looking for a new person...";
 }
 function sendChat(){
   let m=document.getElementById('msgInput').value;
   if(!m) return;
-  document.getElementById('chat').innerHTML += "<div><b>Ikaw:</b> "+m+"</div>";
+  document.getElementById('chat').innerHTML += "<div><b>You:</b> "+m+"</div>";
   socket.emit('chat',m);
   document.getElementById('msgInput').value='';
 }
@@ -118,8 +122,8 @@ socket.on('signal',async(data)=>{
   if(data.answer){await pc.setRemoteDescription(data.answer);}
   if(data.candidate){await pc.addIceCandidate(data.candidate);}
 });
-socket.on('partner-left',()=>{document.getElementById('status').innerText="Umalis yung kausap mo. Click NEXT.";});
-socket.on('waiting',()=>{document.getElementById('status').innerText="Waiting... ikaw muna maghintay";});
+socket.on('partner-left',()=>{document.getElementById('status').innerText="Your partner left. Click NEXT.";});
+socket.on('waiting',()=>{document.getElementById('status').innerText="Waiting... Please wait for a partner";});
 </script>
 </body>
 </html>
