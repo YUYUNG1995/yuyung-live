@@ -1,11 +1,32 @@
 <!DOCTYPE html>
-<html>
+<html lang="tl">
 <head>
-<title>YUYUNG LIVE</title>
+<title>YUYUNG LIVE | Live Video Chat sa Stranger - Philippines</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- PANG-GOOGLE NA, DITO MAG-SIMULA -->
+<meta name="description" content="YUYUNG LIVE - Makipag-live video chat sa mga stranger sa Pilipinas. Click START para makahanap ng kausap, NEXT para lumipat. Libre, mabilis, walang sign-up!">
+<meta name="keywords" content="YUYUNG LIVE, yuyung live, video chat, live chat, stranger chat, omegle philippines, chat random, pinoy video chat">
+<meta name="author" content="YUYUNG LIVE">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://yuyung-live.onrender.com/">
+
+<!-- Para pag ni-share sa Facebook / Messenger, may preview -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="YUYUNG LIVE - Live Video Chat">
+<meta property="og:description" content="Click START para makipag-video chat sa stranger ngayon! Libre at walang sign-up.">
+<meta property="og:url" content="https://yuyung-live.onrender.com/">
+<meta property="og:site_name" content="YUYUNG LIVE">
+
+<!-- Para pag ni-share sa Google / Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="YUYUNG LIVE - Live Video Chat">
+<meta name="twitter:description" content="Makipag-video chat sa stranger. Click START na!">
+
 <style>
   body{font-family:Arial;text-align:center;background:#111;color:white;margin:0;padding:10px}
   h1{color:#ff3b30}
-  /* BAGONG VIDEO BOX - PANTAY NA */
   .video-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:800px;margin:0 auto}
   .video-box{width:100%;height:280px;background:black;border-radius:15px;overflow:hidden;border:2px solid #333;position:relative}
   .video-box video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
@@ -13,15 +34,16 @@
   input{padding:12px;width:60%;border-radius:20px;border:none}
   button{padding:12px 25px;font-size:16px;border:none;border-radius:20px;cursor:pointer;margin:5px}
   .start{background:#00c853;color:white}
-  .end{background:#ff3b30;color:white} /* pag naging END, pula na */
+  .end{background:#ff3b30;color:white}
   .next{background:#ff3b30;color:white}
+  .seo-text{max-width:600px;margin:20px auto;color:#aaa;font-size:14px;line-height:1.6}
 </style>
 </head>
 <body>
 <h1>YUYUNG LIVE🔴</h1>
+<p>Live Video Chat sa Stranger - Pinoy Random Chat</p>
 <p id="status">Click START para maghanap ng kausap</p>
 
-<!-- PINAGTABING BOX, PANTAY NA -->
 <div class="video-grid">
   <div class="video-box"><video id="myVideo" autoplay muted playsinline></video></div>
   <div class="video-box"><video id="partnerVideo" autoplay playsinline></video></div>
@@ -35,56 +57,46 @@
 <input id="msgInput" placeholder="Type message...">
 <button onclick="sendChat()">Send</button>
 
+<!-- PANG-GOOGLE DIN TO, WAG TANGGALIN -->
+<div class="seo-text">
+  <h2>YUYUNG LIVE - Pinoy Video Chat</h2>
+  <p>Welcome sa YUYUNG LIVE! Ang libreng live video chat para sa mga Pilipino. Makipag-usap sa mga bagong kaibigan, makipagkwentuhan, at makakilala ng stranger sa buong Pilipinas. Pindutin lang ang START para magsimula, at NEXT para lumipat sa ibang kausap. Walang kailangan i-download at walang sign-up.</p>
+</div>
+
 <script src="/socket.io/socket.io.js"></script>
 <script>
 const socket=io();
 let pc,localStream;
 let isStarted = false;
-
 async function toggleStart(){
   const btn = document.getElementById('startBtn');
   if(!isStarted){
-    // START -> END
     isStarted = true;
     btn.innerText = "END";
     btn.className = "end";
-
     localStream = await navigator.mediaDevices.getUserMedia({video:true,audio:true});
     document.getElementById('myVideo').srcObject = localStream;
     socket.emit('find-partner');
     document.getElementById('status').innerText = "Naghahanap ng kausap...";
   } else {
-    // END -> START, patayin camera
     isStarted = false;
     btn.innerText = "START";
     btn.className = "start";
-    if(localStream){
-      localStream.getTracks().forEach(t=>t.stop());
-      document.getElementById('myVideo').srcObject = null;
-    }
+    if(localStream){ localStream.getTracks().forEach(t=>t.stop()); document.getElementById('myVideo').srcObject = null; }
     if(pc) pc.close();
     document.getElementById('partnerVideo').srcObject = null;
     socket.emit('next');
     document.getElementById('status').innerText = "Click START para maghanap ng kausap";
   }
 }
-
 function next(){
   if(pc) pc.close();
   document.getElementById('partnerVideo').srcObject = null;
   document.getElementById('chat').innerHTML = '';
-  // Pag nag NEXT, kung naka-END ka, balik sa START logic pero tuloy pa rin sa paghahanap
-  if(isStarted){
-    socket.emit('next');
-    socket.emit('find-partner');
-  } else {
-    // Kung hindi pa naka-START, mag START na rin
-    toggleStart();
-    return;
-  }
+  if(isStarted){ socket.emit('next'); socket.emit('find-partner'); }
+  else { toggleStart(); return; }
   document.getElementById('status').innerText = "Naghahanap ng bagong kausap...";
 }
-
 function sendChat(){
   let m=document.getElementById('msgInput').value;
   if(!m) return;
