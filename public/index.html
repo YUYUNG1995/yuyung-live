@@ -4,31 +4,24 @@
 <title>YUYUNG LIVE | Live Video Chat with Strangers - Philippines</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<!-- SEO FOR GOOGLE -->
 <meta name="description" content="YUYUNG LIVE - Live video chat with strangers in the Philippines. Click START to find someone to talk to, NEXT to switch. Free, fast, no sign-up!">
 <meta name="keywords" content="YUYUNG LIVE, yuyung live, video chat, live chat, stranger chat, omegle philippines, random chat, pinoy video chat">
 <meta name="author" content="YUYUNG LIVE">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://yuyung-live.onrender.com/">
-
-<!-- For Facebook / Messenger preview -->
 <meta property="og:type" content="website">
 <meta property="og:title" content="YUYUNG LIVE - Live Video Chat">
 <meta property="og:description" content="Click START to video chat with a stranger now! Free and no sign-up.">
 <meta property="og:url" content="https://yuyung-live.onrender.com/">
 <meta property="og:site_name" content="YUYUNG LIVE">
-
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="YUYUNG LIVE - Live Video Chat">
-<meta name="twitter:description" content="Video chat with strangers. Click START now!">
-
 <style>
   body{font-family:Arial;text-align:center;background:#111;color:white;margin:0;padding:10px}
   h1{color:#ff3b30}
   .video-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:800px;margin:0 auto}
   .video-box{width:100%;height:280px;background:black;border-radius:15px;overflow:hidden;border:2px solid #333;position:relative}
-  .video-box video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+  .video-box video{width:100%;height:100%;object-fit:cover}
+  #myVideo{transform:scaleX(-1)}
+  .label{position:absolute;bottom:8px;left:8px;background:rgba(0,0,0,0.7);padding:4px 10px;border-radius:10px;font-size:13px;font-weight:bold}
   #chat{width:90%;max-width:600px;height:120px;background:#222;margin:10px auto;padding:10px;overflow-y:auto;text-align:left;border-radius:10px}
   input{padding:12px;width:60%;border-radius:20px;border:none}
   button{padding:12px 25px;font-size:16px;border:none;border-radius:20px;cursor:pointer;margin:5px}
@@ -40,84 +33,156 @@
 </head>
 <body>
 <h1>YUYUNG LIVE🔴</h1>
+<p>Live Video Chat with Strangers - Filipino Random Chat</p>
 <p id="status">Click START to find someone to talk to</p>
-
 <div class="video-grid">
-  <div class="video-box"><video id="myVideo" autoplay muted playsinline></video></div>
-  <div class="video-box"><video id="partnerVideo" autoplay playsinline></video></div>
+  <div class="video-box"><video id="myVideo" autoplay muted playsinline></video><div class="label">YOU</div></div>
+  <div class="video-box"><video id="partnerVideo" autoplay playsinline></video><div class="label">STRANGER</div></div>
 </div>
 <br>
-
 <button id="startBtn" class="start" onclick="toggleStart()">START</button>
 <button class="next" onclick="next()">NEXT</button>
-
 <div id="chat"></div>
 <input id="msgInput" placeholder="Type message...">
 <button onclick="sendChat()">Send</button>
-
-<!-- SEO TEXT - DO NOT REMOVE -->
 <div class="seo-text">
   <h2>YUYUNG LIVE - Filipino Video Chat</h2>
   <p>Welcome to YUYUNG LIVE! The free live video chat for Filipinos. Talk to new friends, have fun conversations, and meet strangers all over the Philippines. Just press START to begin, and NEXT to move to another person. No download needed and no sign-up required.</p>
 </div>
-
 <script src="/socket.io/socket.io.js"></script>
 <script>
-const socket=io();
-let pc,localStream;
+const socket = io();
+let pc = null;
+let localStream = null;
 let isStarted = false;
+let pendingCandidates = [];
+
+function createPC(){
+  if(pc) pc.close();
+  // FIX FOR FAR DISTANCE: Added FREE TURN server so video works even on different WiFi / mobile data
+  pc = new RTCPeerConnection({
+    iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' },
+      { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+      { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+      { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
+    ]
+  });
+  if(localStream){
+    localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+  }
+  pc.ontrack = (e) => {
+    const pv = document.getElementById('partnerVideo');
+    pv.srcObject = e.streams[0];
+    pv.play().catch(()=>{});
+    document.getElementById('status').innerText = "Connected!";
+  };
+  pc.onicecandidate = (e) => {
+    if(e.candidate) socket.emit('signal', { candidate: e.candidate });
+  };
+}
+
 async function toggleStart(){
   const btn = document.getElementById('startBtn');
   if(!isStarted){
     isStarted = true;
     btn.innerText = "END";
     btn.className = "end";
-    localStream = await navigator.mediaDevices.getUserMedia({video:true,audio:true});
-    document.getElementById('myVideo').srcObject = localStream;
-    socket.emit('find-partner');
-    document.getElementById('status').innerText = "Looking for someone to talk to...";
+    try{
+      localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      document.getElementById('myVideo').srcObject = localStream;
+      createPC();
+      socket.emit('find-partner');
+      document.getElementById('status').innerText = "Looking for someone to talk to...";
+    }catch(err){
+      alert("Please ALLOW camera and mic. You clicked Block.");
+      isStarted = false;
+      btn.innerText = "START";
+      btn.className = "start";
+    }
   } else {
     isStarted = false;
     btn.innerText = "START";
     btn.className = "start";
     if(localStream){ localStream.getTracks().forEach(t=>t.stop()); document.getElementById('myVideo').srcObject = null; }
     if(pc) pc.close();
+    pc = null;
     document.getElementById('partnerVideo').srcObject = null;
     socket.emit('next');
     document.getElementById('status').innerText = "Click START to find someone to talk to";
   }
 }
+
 function next(){
   if(pc) pc.close();
+  pc = null;
   document.getElementById('partnerVideo').srcObject = null;
   document.getElementById('chat').innerHTML = '';
-  if(isStarted){ socket.emit('next'); socket.emit('find-partner'); }
-  else { toggleStart(); return; }
+  if(isStarted){
+    createPC();
+    socket.emit('next');
+    socket.emit('find-partner');
+  } else {
+    toggleStart(); return;
+  }
   document.getElementById('status').innerText = "Looking for a new person...";
 }
+
 function sendChat(){
-  let m=document.getElementById('msgInput').value;
+  let m = document.getElementById('msgInput').value;
   if(!m) return;
   document.getElementById('chat').innerHTML += "<div><b>You:</b> "+m+"</div>";
-  socket.emit('chat',m);
-  document.getElementById('msgInput').value='';
+  socket.emit('chat', m);
+  document.getElementById('msgInput').value = '';
 }
-socket.on('chat',m=>{document.getElementById('chat').innerHTML += "<div><b>Stranger:</b> "+m+"</div>";});
-socket.on('partner-found',async(data)=>{
-  document.getElementById('status').innerText="Connected!";
-  pc=new RTCPeerConnection();
-  localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
-  pc.ontrack=e=>document.getElementById('partnerVideo').srcObject=e.streams[0];
-  pc.onicecandidate=e=>{if(e.candidate)socket.emit('signal',{candidate:e.candidate});};
-  if(data.initiator){let offer=await pc.createOffer();await pc.setLocalDescription(offer);socket.emit('signal',{offer});}
+
+socket.on('chat', m => { document.getElementById('chat').innerHTML += "<div><b>Stranger:</b> "+m+"</div>"; });
+
+socket.on('partner-found', async (data) => {
+  document.getElementById('status').innerText = "Connected!";
+  if(!pc) createPC();
+  if(data.initiator){
+    let offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    socket.emit('signal', { offer });
+  }
 });
-socket.on('signal',async(data)=>{
-  if(data.offer){await pc.setRemoteDescription(data.offer);let ans=await pc.createAnswer();await pc.setLocalDescription(ans);socket.emit('signal',{answer:ans});}
-  if(data.answer){await pc.setRemoteDescription(data.answer);}
-  if(data.candidate){await pc.addIceCandidate(data.candidate);}
+
+socket.on('signal', async (data) => {
+  if(!pc) createPC();
+  try{
+    if(data.offer){
+      await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+      let ans = await pc.createAnswer();
+      await pc.setLocalDescription(ans);
+      socket.emit('signal', { answer: ans });
+      for(let c of pendingCandidates){ await pc.addIceCandidate(new RTCIceCandidate(c)); }
+      pendingCandidates = [];
+    }
+    if(data.answer){
+      await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+      for(let c of pendingCandidates){ await pc.addIceCandidate(new RTCIceCandidate(c)); }
+      pendingCandidates = [];
+    }
+    if(data.candidate){
+      if(pc.remoteDescription){
+        await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+      } else {
+        pendingCandidates.push(data.candidate);
+      }
+    }
+  }catch(e){ console.log("Signal error:", e); }
 });
-socket.on('partner-left',()=>{document.getElementById('status').innerText="Your partner left. Click NEXT.";});
-socket.on('waiting',()=>{document.getElementById('status').innerText="Waiting... Please wait for a partner";});
+
+socket.on('partner-left', () => {
+  document.getElementById('status').innerText = "Your partner left. Click NEXT.";
+  document.getElementById('partnerVideo').srcObject = null;
+  if(pc) pc.close();
+  pc = null;
+  if(isStarted) createPC();
+});
+socket.on('waiting', () => { document.getElementById('status').innerText = "Waiting... Please wait for a partner"; });
 </script>
 </body>
 </html>
