@@ -104,7 +104,7 @@ function sendChat(){
 }
 socket.on('chat',m=>{document.getElementById('chat').innerHTML += "<div><b>Stranger:</b> "+m+"</div>";});
 socket.on('partner-found',async(data)=>{
-  document.getElementById('status').innerText="Connected! Say Hi!";
+  document.getElementById('status').innerText="Connected!";
   pc=new RTCPeerConnection();
   localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
   pc.ontrack=e=>document.getElementById('partnerVideo').srcObject=e.streams[0];
